@@ -1,9 +1,12 @@
 #pragma once
+
 #include <fstream>
 #include <string>
 #include <vector>
 
-namespace stuffz {
+#include "helpers.h"
+
+namespace helpers {
 
     /** Reads the CSV file line by line.
 
@@ -24,6 +27,10 @@ namespace stuffz {
         */
         virtual void row(std::vector<std::string> & row)  = 0;
 
+        virtual void error(std::ios_base::failure const & e) {
+            std::cout << "line " << lineNum_  << ": " << e.what() << std::endl;
+        }
+
 
         /** Parses the given file.
 
@@ -34,12 +41,16 @@ namespace stuffz {
             lineNum_ = 1;
             //        f_.open(filename, std::ios::in);
             if (! f_.good())
-                throw std::ios_base::failure("Unable to openfile " + filename);
+                throw std::ios_base::failure(STR("Unable to openfile " << filename));
             while (! eof()) {
-                append();
-                if (!row_.empty()) {
-                    row(row_);
-                    row_.clear();
+                try {
+                    append();
+                    if (!row_.empty()) {
+                        row(row_);
+                        row_.clear();
+                    }
+                } catch(std::ios_base::failure const & e) {
+                    error(e);
                 }
             }
             f_.close();
@@ -58,7 +69,9 @@ namespace stuffz {
             TODO make this function more robust.
         */
         void append() {
+            size_t startline = lineNum_;
             std::string line = readLine();;
+            std::string startLine = line;
             size_t i = 0;
             bool isFirst = true;
             while (i < line.size()) {
@@ -69,7 +82,7 @@ namespace stuffz {
                     ++i;
                     while (line[i] != QUOTE) {
                         if (eof())
-                            throw std::ios_base::failure("Unterminated quote, starting at line " + quoteStart);
+                            throw std::ios_base::failure(STR("Unterminated quote, starting at line " + quoteStart));
                         if (line[i] == '\\') {
                             ++i;
                             while (i == line.size() && ! eof()) {
@@ -85,10 +98,40 @@ namespace stuffz {
                         }
                     }
                     ++i; // past the ending quote
+                    // if immediately followed by non-whitespace and not separator, add this to the column as well
+                    if (line[i] != ' ' && line[i] != '\t') {
+                        col = QUOTE + col + QUOTE;
+                        while (i < line.size() && line[i] != SEPARATOR)
+                            col = col + line[i++];
+                    }
                     if (line[i] == SEPARATOR)
                         ++i;
                 } else {
                     while (i < line.size()) {
+                        // prefixed strings - i.e. some stuff followed by quoted string, we keep the quotes
+                        if (line[i] == QUOTE) {
+                            col += line[i++];
+                            std::string xl = line;
+                            size_t quoteStart = lineNum_;
+                            while(line[i] != QUOTE) {
+                                if (eof())
+                                    throw std::ios_base::failure(STR("Unterminated quote, starting at line " << quoteStart << line));
+                                if (line[i] == '\\') {
+                                    ++i;
+                                    while (i == line.size() && ! eof()) {
+                                        line = readLine();
+                                        i = 0;
+                                    }
+                                }
+                                col += line[i++];
+                                while (i == line.size() && ! eof()) {
+                                    line = readLine();
+                                    i = 0;
+                                    col += "\n";
+                                }
+                            }
+                            col += line[i++]; // the ending quote
+                        }
                         if (line[i] == SEPARATOR) {
                             ++i;
                             break;

@@ -80,9 +80,6 @@ void FilterLog(std::string const & folder, std::string const & name) {
     std::cout << std::endl;
 }
 
-
-
-
 void FilterLogFiles(std::string const & folder = "") {
     std::string path = folder == "" ? inputDir : inputDir + folder;
     std::cout << path << std::endl;
@@ -120,6 +117,7 @@ int main(int argc, char * argv[]) {
     } catch (char const * e) {
         std::cerr << "ERROR: ";
         std::cerr << e << std::endl;
+        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
