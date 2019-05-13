@@ -5,16 +5,15 @@
 namespace helpers {
 
     inline bool startsWith(std::string const & value, std::string const & prefix) {
-        return value.find(prefix) == 0;
+      return value.compare(0, prefix.size(), prefix) == 0;
     }
-    
+
     inline bool endsWith(std::string const & value, std::string const & ending) {
         if (ending.size() > value.size())
             return false;
-        return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+        return value.compare(value.size() - ending.size(), ending.size(), ending) == 0;
     }
 
-    
     inline std::vector<std::string> split(std::string const & what, char delimiter) {
         std::vector<std::string> result;
         size_t start = 0;
@@ -36,5 +35,5 @@ namespace helpers {
         }
         return result;
     }
-    
+
 }
