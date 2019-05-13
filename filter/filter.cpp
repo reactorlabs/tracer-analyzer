@@ -67,7 +67,7 @@ void FilterLog(std::string const & folder, std::string const & name) {
         for (std::string const & event : events) {
             if (startsWith(line, event)) {
                 ++validEvents;
-                of << line << std::endl;
+                of << line << '\n';
                 break;
             }
         }
