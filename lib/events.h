@@ -1,14 +1,13 @@
 #pragma once
 
+#include <cassert>
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <ostream>
+#include <sstream>
 
 #include "helpers/strings.h"
-
-// TODO super extra mega dirty ugly
-#define assert(x) if (! (x)) throw "assertion failure";
 
 inline std::string stripStringPrefixes(std::string const & str) {
     if (str[str.size() - 1] != '"')
@@ -23,9 +22,9 @@ class Location {
 public:
     std::string filename;
     int line;
-    
+
     Location() = default;
-    
+
     Location(std::string const & filename, int line):
         filename(filename),
         line(line) {
@@ -38,9 +37,9 @@ public:
         assert(x.size() == 2);
         filename = stripStringPrefixes(x[0]);
         line = std::stoi(x[1]);
-        
+
     }
-    
+
 };
 
 class Event {
@@ -85,16 +84,18 @@ public:
     size_t id;
     size_t mapId;
     std::string name;
+    std::string value;
     Location location;
 
     SetProperty(std::vector<std::string> const & row) {
         assert(row[0] == "set-property");
-        if (row.size() != 5)
+        if (row.size() != 6)
             throw "Invalid format of set-property record";
         id = std::stoi(row[1]);
         mapId = std::stoi(row[2]);
         name = row[3];
-        location = Location(row[4]);
+        value = row[4];
+        location = Location(row[5]);
     }
 };
 
@@ -127,16 +128,18 @@ public:
     size_t id;
     size_t mapId;
     int index;
+    std::string value;
     Location location;
 
     SetElement(std::vector<std::string> const & row) {
         assert(row[0] == "set-element");
-        if (row.size() != 5)
+        if (row.size() != 6)
             throw "Invalid format of set-element record";
         id = std::stoi(row[1]);
         mapId = std::stoi(row[2]);
         index = std::stoi(row[3]);
-        location = Location(row[4]);
+        value = row[4];
+        location = Location(row[5]);
     }
 
     friend std::ostream & operator << (std::ostream & s, SetElement const & e) {
@@ -149,22 +152,30 @@ class MapChange : public Event {
 public:
     size_t id;
     std::string type;
+    size_t prototype;
     int elementType;
     std::unordered_map<std::string, char> fields;
 
     MapChange(std::vector<std::string> const & row) {
         assert(row[0] == "map-change");
+        if (row.size() < 6) {
+          throw "Invalid format of map-change record";
+        }
         id = std::stoi(row[1]);
-        type = row[2];
-        elementType = std::stoi(row[3]);
-        int numFields = std::stoi(row[4]);
-        if (row.size() != numFields + 5)
+        prototype = std::stoi(row[2]);
+        type = row[3];
+        elementType = std::stoi(row[4]);
+        int numFields = std::stoi(row[5]);
+        if (row.size() != 2 * numFields + 6)
             throw "Invalid format of map-change record";
-        for (size_t i = 5, e = row.size(); i != e; ++i) {
-            auto x = helpers::split(row[i], ':');
-            assert(x.size() >= 2);
-            std::string name = helpers::join(x, ":", 0, x.size() - 1);
-            fields[name] = x[x.size() - 1][0];
+        for (size_t i = 6, e = row.size(); i < e; i++) {
+          auto name = row[i++];
+          if (row[i].size() != 1) {
+            std::ostringstream buffer;
+            buffer << "Mnemonic must be one char; got " << row[i];
+            throw std::runtime_error(buffer.str());
+          }
+          fields[name] = row[i][0];
         }
     }
 
@@ -173,6 +184,6 @@ public:
         // TODO
         return s;
     }
-    
+
 };
 
