@@ -12,7 +12,7 @@
 /** Represents the JavaScript object over its lifetime.
 
 
-    
+
  */
 class JSObject {
 public:
@@ -63,7 +63,9 @@ public:
         }
 
         friend std::ostream & operator << (std::ostream & s, Epoch const & e) {
-            s << e.map->id << "," << e.map->type << "," << e.events << "," << e.getElementCount << "," << e.setElementCount << "," << e.minIndex << "," << e.maxIndex << "," << e.getPropertyCount << "," << e.setPropertyCount << "," << e.properties.size(); 
+            s << e.map->id << "," << e.map->type << "," << e.events << "," << e.getElementCount << "," << e.setElementCount << "," << e.minIndex << "," << e.maxIndex << "," << e.getPropertyCount << "," << e.setPropertyCount << "," << e.properties.size();
+
+            return s;
         }
 
 
@@ -84,8 +86,8 @@ public:
         ++epoch.events;
         ++epoch.getPropertyCount;
         epoch.properties[e.name].getCount += 1;
-        
-        
+
+
     }
 
     void propertyWrite(MapChange * map, SetProperty const & e) {
@@ -122,7 +124,7 @@ public:
     friend std::ostream & operator << (std::ostream & s, JSObject const & obj) {
         size_t eidx = 0;
         for (Epoch const & e : obj.epochs_) {
-            s << obj.id << "," << eidx << "," << e << std::endl;
+            s << obj.id << "," << eidx << "," << e << '\n';
             ++eidx;
         }
         return s;
@@ -131,14 +133,14 @@ public:
 private:
 
     Epoch & updateEpoch(MapChange * map) {
-        if (epochs_.empty()) 
+        if (epochs_.empty())
             epochs_.push_back(Epoch(map));
         else if (epochs_.back().map->id != map->id)
             epochs_.push_back(Epoch(map));
         // otherwise do nothing, the epoch we have is valid
         return epochs_.back();
     }
-    
+
     std::vector<Epoch> epochs_;
 
-}; 
+};

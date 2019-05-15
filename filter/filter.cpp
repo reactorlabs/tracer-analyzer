@@ -1,11 +1,11 @@
 
 #include <cstdlib>
+#include <cassert>
 #include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
-#include <unordered_set>
 #include <dirent.h>
 
 #include "helpers/strings.h"
@@ -14,7 +14,7 @@ using namespace helpers;
 
 std::string inputDir; // where to look for the logs
 std::string outputDir; // where to put the filtered logs
-std::unordered_set<std::string> events; // where to 
+std::vector<std::string> events; // where to
 
 
 
@@ -30,7 +30,7 @@ void ParseArguments(int argc, char * argv[]) {
                 throw "-o must be followed by output folder";
             outputDir = argv[i];
         } else {
-            events.insert(argv[i]);
+            events.push_back(argv[i]);
         }
     }
     std::cout << "Input dir:  " << inputDir << std::endl;
@@ -65,11 +65,11 @@ void FilterLog(std::string const & folder, std::string const & name) {
     while (std::getline(f, line)) {
         ++totalEvents;
         for (std::string const & event : events) {
-            if (startsWith(line, event)) {
-                ++validEvents;
-                of << line << '\n';
-                break;
-            }
+          if (startsWith(line, event)) {
+            ++validEvents;
+            of << line << '\n';
+            break;
+          }
         }
     }
     f.close();
@@ -91,7 +91,7 @@ void FilterLogFiles(std::string const & folder = "") {
         if (dp->d_type == DT_REG) {
             if (endsWith(name, ".log") && startsWith(name, "isolate-"))
                 FilterLog(folder, name);
-        // otherwise recurse into directories 
+        // otherwise recurse into directories
         } else if (dp->d_type == DT_DIR) {
             if (name == "." || name == "..") // ignore special dirs
                 continue;
@@ -108,7 +108,7 @@ void FilterLogFiles(std::string const & folder = "") {
 
     Where `RAWDIR` is the directory in which the logs should be found and `E` are names of events we want to keep. All other events will be discarded. The `-o` argument followed by a directory puts all the compacted logs into this directory.
 
-    If output is not specified, the filtered logs are stored in the same directory they were taken from and have `.filtered` appended to their name. 
+    If output is not specified, the filtered logs are stored in the same directory they were taken from and have `.filtered` appended to their name.
  */
 int main(int argc, char * argv[]) {
     try {
